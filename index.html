@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+  <title>DineAR - Modern Restaurant Experience</title>
+
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+  <link rel="preconnect" href="https://ajax.googleapis.com">
+  <link rel="dns-prefetch" href="https://ajax.googleapis.com">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-color: #f8fafc;
+      --surface-color: #ffffff;
+      --surface-hover: #f1f5f9;
+      --primary: #f97316;
+      --primary-hover: #ea580c;
+      --secondary: #fb923c;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --font-display: 'Playfair Display', serif;
+      --font-body: 'Outfit', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      width: 100%; height: 100%; font-family: var(--font-body);
+      background: var(--bg-color); 
+      color: var(--text-main); overflow-x: hidden;
+    }
+
+    .app-container { display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 40px; }
+
+    header { 
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky; top: 0; z-index: 5; 
+    }
+    .header-top { 
+      background: var(--primary); 
+      color: white; padding: 8px 20px; display: flex; justify-content: space-between; 
+      font-size: 13px; font-weight: 600; letter-spacing: 0.5px;
+    }
+    .header-main { padding: 24px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+    
+    .brand-title { 
+      font-family: var(--font-display); font-size: 42px; letter-spacing: 1px; line-height: 1; 
+      color: var(--text-main);
+    }
+    .tagline { font-weight: 400; font-size: 15px; color: var(--primary); letter-spacing: 1.5px; text-transform: uppercase; }
+
+    .hero { 
+      margin: 20px; border-radius: 24px;
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      padding: 40px 20px; text-align: center; position: relative; overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    .hero h2 { font-size: 28px; margin-bottom: 12px; font-weight: 800; font-family: var(--font-display); }
+    .hero p { color: var(--text-muted); font-size: 16px; font-weight: 400; }
+
+    .categories { display: flex; gap: 12px; padding: 0 20px 20px; overflow-x: auto; scrollbar-width: none; }
+    .categories::-webkit-scrollbar { display: none; }
+    .category-btn { 
+      background: white; color: var(--text-muted); 
+      border: 1px solid var(--border-color); border-radius: 999px; 
+      padding: 12px 24px; font-size: 15px; font-weight: 600; cursor: pointer; 
+      white-space: nowrap; transition: all 0.3s ease;
+      font-family: var(--font-body); box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+    .category-btn.active { 
+      background: var(--primary); color: white; border-color: var(--primary); 
+      box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3); 
+    }
+    .category-btn:not(.active):hover { background: var(--surface-hover); color: var(--text-main); }
+
+    
+    .menu-list { padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
+    .menu-card { 
+      background: var(--surface-color); border-radius: 16px; overflow: hidden; 
+      border: 1px solid var(--border-color); display: flex; flex-direction: column;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: transform 0.2s ease, box-shadow 0.2s ease;
+      padding: 24px;
+    }
+    .menu-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.08); transform: translateY(-2px); }
+    .menu-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 12px; }
+    .menu-card-title { font-size: 22px; font-weight: 600; color: var(--text-main); font-family: var(--font-display); }
+    .menu-card-desc { font-size: 15px; color: var(--text-muted); font-weight: 400; line-height: 1.6; margin-bottom: 20px; }
+    .menu-card-sizes { display: flex; flex-wrap: wrap; gap: 10px; }
+    .size-pill { background: #f1f5f9; color: var(--text-main); font-size: 14px; font-weight: 500; padding: 6px 14px; border-radius: 8px; border: 1px solid #cbd5e1; }
+    .size-pill .price { color: var(--primary); font-weight: 700; margin-left: 6px; }
+    
+    .ar-btn { 
+      background: var(--primary); color: white; border: none; border-radius: 50px; 
+      padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; 
+      display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(249, 115, 22, 0.2);
+      transition: all 0.2s ease; white-space: nowrap; flex-shrink: 0;
+    }
+    .ar-btn:hover { background: var(--primary-hover); transform: scale(1.05); }
+
+    footer {
+ 
+      background: var(--surface-color); padding: 40px 20px; margin-top: 40px; 
+      text-align: center; border-top: 1px solid var(--border-color); 
+    }
+    .footer-placeholder { 
+      width: 100%; padding: 20px; border: 1px dashed var(--border-color); 
+      background: #f8fafc; color: var(--text-muted); 
+      font-size: 14px; border-radius: 16px; margin-bottom: 20px; font-weight: 400;
+    }
+
+    /* === VIEWER CARD === */
+    .viewer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 50; display: none; opacity: 0; transition: opacity 0.3s ease; align-items: flex-end; }
+    .viewer-overlay.active { display: flex; opacity: 1; }
+    
+    .viewer-card { 
+      width: 100%; background: var(--surface-color); border-radius: 32px 32px 0 0; padding: 30px 24px; 
+      transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1); 
+      display: flex; flex-direction: column; 
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+    }
+    .viewer-overlay.active .viewer-card { transform: translateY(0); }
+    
+    .viewer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .viewer-title h2 { font-size: 24px; font-weight: 600; font-family: var(--font-display); color: var(--text-main); }
+    .viewer-title .viewer-price { color: var(--primary); font-weight: 500; font-size: 16px; margin-top: 6px; }
+    
+    .close-viewer { background: #f1f5f9; border: none; color: var(--text-main); width: 40px; height: 40px; border-radius: 50%; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s;}
+    .close-viewer:hover { background: #e2e8f0; }
+    
+    model-viewer { width: 100%; height: 35vh; min-height: 250px; background: transparent; outline: none; border-radius: 24px; transition: opacity 0.3s ease; }
+    model-viewer::part(default-progress-bar) { display: none; }
+
+    /* Loading wrap */
+    .mv-loading-wrap { position: relative; width: 100%; height: 35vh; min-height: 250px; border-radius: 24px; overflow: hidden; background: #f8fafc; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); }
+    .mv-loading-wrap model-viewer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; }
+    .mv-spinner { position: absolute; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; pointer-events: none; transition: opacity 0.3s; }
+    .mv-spinner.hidden { opacity: 0; }
+    .mv-spinner-ring { width: 44px; height: 44px; border: 3px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .mv-spinner-text { font-size: 13px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.5px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .cache-badge { position: absolute; top: 12px; left: 12px; z-index: 3; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #059669; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .cache-badge.show { opacity: 1; }
+    
+    .launch-btn { margin-top: 24px; background: var(--primary); color: white; border: none; border-radius: 16px; padding: 18px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; display: flex; justify-content: center; align-items: center; gap: 12px; box-shadow: 0 8px 20px rgba(249, 115, 22, 0.2); transition: transform 0.2s, box-shadow 0.2s; }
+    .launch-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(249, 115, 22, 0.3); background: var(--primary-hover); }
+
+    /* === AR ERROR MODAL === */
+    .ar-error-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 24px; }
+    .ar-error-modal.active { display: flex; }
+    .ar-error-box { background: white; border: 1px solid var(--border-color); border-radius: 24px; padding: 32px 24px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+    .ar-error-icon { font-size: 42px; margin-bottom: 16px; }
+    .ar-error-title { font-size: 20px; font-weight: 600; margin-bottom: 10px; color: var(--text-main); font-family: var(--font-display); }
+    .ar-error-body { font-size: 14px; line-height: 1.6; color: var(--text-muted); margin-bottom: 16px; }
+    .ar-error-fix { font-size: 13px; line-height: 1.6; color: var(--text-muted); background: #f8fafc; border-left: 3px solid var(--primary); padding: 16px; border-radius: 12px; margin-bottom: 24px; text-align: left; }
+    .ar-error-close { width: 100%; background: var(--primary); color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; }
+
+    #overlay { position: fixed; inset: 0; z-index: 9999; display: none; }
+    #overlay.active { display: block; }
+    
+    #xr-canvas { width: 100%; height: 100%; touch-action: none; position: absolute; top: 0; left: 0; z-index: -1; }
+    
+    .hint { position: absolute; bottom: 130px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border: 1px solid rgba(0,0,0,0.1); color: var(--text-main); padding: 16px 28px; border-radius: 999px; font-size: 14px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    
+    .place-btn { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; border: none; border-radius: 999px; padding: 18px 36px; font-size: 16px; font-weight: 600; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); opacity: 0; pointer-events: none; transition: 0.3s; }
+    .place-btn.ready { opacity: 1; pointer-events: auto; }
+    
+    .close-ar-btn { position: absolute; top: 40px; right: 20px; width: 50px; height: 50px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); color: var(--text-main); font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    
+    .controls { position: absolute; right: 20px; bottom: 60px; display: flex; flex-direction: column; gap: 16px; opacity: 0; pointer-events: none; transition: 0.3s; }
+    .controls.visible { opacity: 1; pointer-events: auto; }
+    .controls button { width: 56px; height: 56px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); color: var(--text-main); font-size: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+  </style>
+</head>
+
+<body>
+
+  <div class="app-container">
+    <header>
+      <div class="header-top">
+        <span>Delivery: +1 (800) 555-DINE</span>
+        <span>Support: +1 (800) 555-HELP</span>
+      </div>
+      <div class="header-main">
+        <div class="brand-title">DineAR</div>
+        <div class="tagline">Experience Food in 3D</div>
+      </div>
+    </header>
+
+    <div class="hero">
+      <h2>Interactive Menu</h2>
+      <p>Preview our signature dishes in stunning Augmented Reality right on your table.</p>
+    </div>
+
+    <div class="categories" id="category-container"></div>
+    <div class="menu-list" id="menu-container"></div>
+    
+    <footer>
+      <div class="footer-placeholder">📍 123 Visionary Way, Tech District</div>
+      <div class="footer-placeholder">🌐 Follow us @DineAR_Experience</div>
+      <p style="font-size: 13px; color: var(--text-muted); font-weight: 300;">© 2026 DineAR Solutions.</p>
+    </footer>
+  </div>
+
+  <!-- VIEWER CARD -->
+  <div class="viewer-overlay" id="viewer-overlay">
+    <div class="viewer-card">
+      <div class="viewer-header">
+        <div class="viewer-title">
+          <h2 id="viewer-name">Item Name</h2>
+          <div class="viewer-price" id="viewer-price">$0.00</div>
+        </div>
+        <button class="close-viewer" onclick="closeViewer()">✕</button>
+      </div>
+      
+      <div class="mv-loading-wrap">
+        <model-viewer id="mv" src="" camera-controls auto-rotate shadow-intensity="1" exposure="1" environment-image="neutral" ar ar-modes="quick-look" ar-scale="fixed" ar-placement="floor">
+          <button slot="ar-button" id="mv-ar-btn" style="display:none"></button>
+        </model-viewer>
+        <div class="mv-spinner" id="mv-spinner">
+          <div class="mv-spinner-ring"></div>
+          <div class="mv-spinner-text">Loading 3D model...</div>
+        </div>
+        <div class="cache-badge" id="cache-badge">⚡ Instant</div>
+      </div>
+
+      <button class="launch-btn" id="launch-ar-btn" onclick="launchAR()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        View in Your Space
+      </button>
+    </div>
+  </div>
+
+  <!-- AR ERROR MODAL -->
+  <div class="ar-error-modal" id="ar-error-modal">
+    <div class="ar-error-box">
+      <div class="ar-error-icon">📵</div>
+      <div class="ar-error-title" id="ar-error-title">AR Not Available</div>
+      <div class="ar-error-body" id="ar-error-body"></div>
+      <div class="ar-error-fix" id="ar-error-fix"></div>
+      <button class="ar-error-close" onclick="document.getElementById('ar-error-modal').classList.remove('active')">Got it</button>
+    </div>
+  </div>
+
+  <!-- CUSTOM AR OVERLAY -->
+  <div id="overlay">
+    <canvas id="xr-canvas"></canvas>
+    <button class="close-ar-btn" onclick="stopAR()">✕</button>
+    <div class="hint" id="hint">Move phone slowly to detect surface...</div>
+    <button class="place-btn" id="place-btn">Place Dish</button>
+    
+    <div class="controls" id="controls">
+      <button onclick="scaleModel(1.1)">+</button>
+      <button onclick="scaleModel(0.9)">−</button>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================
+       DATA STRUCTURE
+    ========================================================= */
+    const addOnsConfig = {
+      pizza: [
+        { name: "Extra Cheese", price: 2.50 },
+        { name: "Truffle Oil", price: 3.00 },
+        { name: "Gluten-Free Crust", price: 4.00 }
+      ],
+      burger: [
+        { name: "Extra Patty", price: 4.50 },
+        { name: "Bacon", price: 2.00 },
+        { name: "Caramelized Onions", price: 1.50 }
+      ],
+      setMenu: [
+        { name: "Side Salad", price: 3.50 },
+        { name: "Roasted Veggies", price: 4.00 }
+      ]
+    };
+
+    const menuData = [
+      {
+        category: "GOURMET PIZZA", addonType: "pizza",
+        items: [
+          { 
+            name: "Truffle Mushroom Supreme", 
+            desc: "Wild mushrooms, truffle oil, mozzarella, parmesan.", 
+            model: "models/pizza1.glb", 
+            scale: 0.35, 
+            subitems: [{ name: "Small 10\"", price: 16.00 }, { name: "Medium 12\"", price: 22.00 }, { name: "Large 14\"", price: 28.00 }] 
+          },
+          { name: "Spicy Diavola",
+            desc: "Spicy salami, chili flakes, fresh mozzarella.", 
+            model: "models/pizza.glb", 
+            scale: 0.35, 
+            subitems: [{ name: "Small 10\"", price: 15.00, model: "models/pizza.glb", scale: 0.25 }, { name: "Medium 12\"", price: 21.00, model: "models/pizza.glb", scale: 0.3 }, { name: "Large 14\"", price: 26.00, model: "models/pizza.glb", scale: 0.35 }] 
+          },
+          { name: "Classic Margherita", desc: "San Marzano tomatoes, fresh basil, mozzarella.", subitems: [{ name: "Small 10\"", price: 12.00, model: "models/pizza.glb", scale: 0.25 }, { name: "Medium 12\"", price: 16.00, model: "models/pizza.glb", scale: 0.3 }, { name: "Large 14\"", price: 20.00, model: "models/pizza.glb", scale: 0.35 }] }
+        ]
+      },
+      {
+        category: "SIGNATURE BURGERS", addonType: "burger",
+        items: [
+          { name: "The Classic Smash", 
+          desc: "Double smashed patty, American cheese, house sauce.", 
+          model: "models/burger.glb", 
+          scale: 0.35, 
+          subitems: [{ name: "Single", price: 12.00, model: "models/burger.glb", scale: 0.15 }, { name: "Double", price: 15.00, model: "models/burger.glb", scale: 0.16 }] },
+          { name: "Blue Cheese & Bacon", desc: "Thick patty, crumbled blue cheese, crispy bacon.", subitems: [{ name: "Regular", price: 16.00, model: "models/burger.glb", scale: 0.15 }] },
+          { name: "Spicy Jalapeño Crunch", desc: "Pepper jack, fresh jalapeños, spicy mayo.", subitems: [{ name: "Regular", price: 15.50, model: "models/burger.glb", scale: 0.15 }] }
+        ]
+      },
+      {
+        category: "CHEF'S SPECIALS", addonType: "setMenu",
+        items: [
+          { name: "Steak Frites", desc: "10oz Ribeye, garlic herb butter, truffle fries.", subitems: [{ name: "Standard", price: 35.00, model: "models/burger.glb", scale: 0.25 }] },
+          { name: "Roasted Salmon", desc: "Wild-caught salmon, quinoa pilaf, asparagus.", subitems: [{ name: "Standard", price: 28.00, model: "models/burger.glb", scale: 0.25 }] }
+        ]
+      },
+      {
+        category: "DRINKS & SIDES", addonType: null,
+        items: [
+          { name: "Craft Beverages", desc: "Locally sourced sodas and fresh juices.", subitems: [{ name: "Lemonade", price: 4.50, model: "models/pizza.glb", scale: 0.1 }, { name: "Iced Tea", price: 3.50, model: "models/pizza.glb", scale: 0.1 }] },
+          { name: "Truffle Parmesan Fries", desc: "Shoestring fries tossed in truffle oil and parmesan.", subitems: [{ name: "Regular", price: 8.00, model: "models/pizza.glb", scale: 0.2 }] }
+        ]
+      }
+    ];
+
+    const categoryContainer = document.getElementById('category-container');
+    const menuContainer = document.getElementById('menu-container');
+    const viewerOverlay = document.getElementById('viewer-overlay');
+    const mv = document.getElementById('mv');
+    
+    let activeCategory = menuData[0].category;
+
+    function initUI() {
+      renderCategories();
+      renderMenu();
+    }
+
+    function renderCategories() {
+      categoryContainer.innerHTML = '';
+      menuData.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = `category-btn ${cat.category === activeCategory ? 'active' : ''}`;
+        btn.innerText = cat.category;
+        btn.onclick = () => {
+          activeCategory = cat.category;
+          renderCategories();
+          renderMenu();
+        };
+        categoryContainer.appendChild(btn);
+      });
+    }
+
+    function renderMenu() {
+      menuContainer.innerHTML = '';
+      const categoryData = menuData.find(c => c.category === activeCategory);
+      if (!categoryData) return;
+
+      categoryData.items.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = 'menu-card';
+        
+        let arButtonHtml = '';
+        const hasMainModel = item.model && item.scale;
+        
+        if (hasMainModel) {
+          const fakeSub = { name: "3D Preview", price: item.subitems ? item.subitems[0].price : 0, model: item.model, scale: item.scale };
+          const subDataStr = JSON.stringify(fakeSub).replace(/"/g, '&quot;');
+          const itemNameStr = item.name.replace(/'/g, "\'").replace(/"/g, '&quot;');
+          
+          arButtonHtml = `
+            <button class="ar-btn" onclick="openViewer(${subDataStr}, '${itemNameStr}')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+              View 3D
+            </button>
+          `;
+        }
+
+        let sizesHtml = '';
+        if (item.subitems && item.subitems.length > 0) {
+           sizesHtml = '<div class="menu-card-sizes">';
+           item.subitems.forEach(sub => {
+              let priceStr = typeof sub.price === 'number' ? sub.price.toFixed(2) : sub.price;
+              sizesHtml += `<div class="size-pill">${sub.name} <span class="price">$${priceStr}</span></div>`;
+           });
+           sizesHtml += '</div>';
+        }
+
+        card.innerHTML = `
+          <div class="menu-card-header">
+            <div>
+              <div class="menu-card-title">${item.name}</div>
+            </div>
+            ${arButtonHtml}
+          </div>
+          <div class="menu-card-desc">${item.desc}</div>
+          ${sizesHtml}
+        `;
+        
+        menuContainer.appendChild(card);
+      });
+    }
+
+    let currentModelURL = "";
+    let currentModelScale = 0.8;
+
+    function openViewer(subitem, itemName) {
+      document.getElementById('viewer-name').innerText = `${itemName} (${subitem.name})`;
+      document.getElementById('viewer-price').innerText = `৳ ${subitem.price}`;
+
+      currentModelURL = subitem.model;
+      currentModelScale = subitem.scale;
+
+      const mvEl = document.getElementById('mv');
+      const spinner = document.getElementById('mv-spinner');
+      const cacheBadge = document.getElementById('cache-badge');
+
+      // Always set AR attributes
+      mvEl.removeAttribute('ios-src');
+      mvEl.setAttribute('ar', '');
+      mvEl.setAttribute('ar-modes', 'quick-look');
+      mvEl.setAttribute('ar-scale', 'fixed');
+      mvEl.setAttribute('ar-placement', 'floor');
+
+      const isCached = gltfCache.has(currentModelURL);
+
+      if (isCached) {
+        spinner.classList.add('hidden');
+        cacheBadge.classList.add('show');
+        setTimeout(() => cacheBadge.classList.remove('show'), 1500);
+        mvEl.style.opacity = '1';
+        // Apply correct scale immediately from cache
+        applyQuickLookScale(mvEl, gltfCache.get(currentModelURL), currentModelScale);
+      } else {
+        spinner.classList.remove('hidden');
+        cacheBadge.classList.remove('show');
+        mvEl.style.opacity = '0';
+        // Load GLB into cache, then apply scale when ready
+        loadGLTF(currentModelURL).then(gltf => {
+          applyQuickLookScale(mvEl, gltf, currentModelScale);
+        }).catch(() => {});
+      }
+
+      const onMVLoad = () => {
+        spinner.classList.add('hidden');
+        mvEl.style.opacity = '1';
+        mvEl.removeEventListener('load', onMVLoad);
+      };
+      mvEl.addEventListener('load', onMVLoad);
+
+      mvEl.src = currentModelURL;
+
+      const launchBtn = document.getElementById('launch-ar-btn');
+
+      if (!isMobile) {
+        launchBtn.innerHTML = `
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          AR on mobile only
+        `;
+        launchBtn.style.opacity = '0.45';
+        launchBtn.style.cursor = 'default';
+      } else {
+        launchBtn.innerHTML = `
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          View in AR
+        `;
+        launchBtn.style.opacity = '1';
+        launchBtn.style.cursor = 'pointer';
+      }
+
+      viewerOverlay.classList.add('active');
+    }
+
+    // Compute the exact same scale Android WebXR uses (targetMeters / maxAxis)
+    // and apply it to model-viewer so iOS AR Quick Look shows the same size.
+    function applyQuickLookScale(mvEl, gltf, targetMeters) {
+      // Clone scene temporarily just for measurement — don't add to DOM
+      const tempScene = gltf.scene.clone(true);
+      const box = new THREE.Box3().setFromObject(tempScene);
+      const size = box.getSize(new THREE.Vector3());
+      const maxAxis = Math.max(size.x, size.y, size.z);
+      if (maxAxis === 0) return;
+      const scaleFactor = targetMeters / maxAxis;
+      // model-viewer scale attribute: "x y z" — same value on all axes
+      mvEl.setAttribute('scale', `${scaleFactor} ${scaleFactor} ${scaleFactor}`);
+    }
+
+    function closeViewer() {
+      viewerOverlay.classList.remove('active');
+    }
+
+    // Close viewer when clicking outside card
+    viewerOverlay.addEventListener('click', (e) => {
+      if (e.target === viewerOverlay) closeViewer();
+    });
+
+    initUI();
+    schedulePreload(); // begin background preloading during idle time
+
+    /* =========================================================
+       GLB CACHE — parsed GLTF stored by URL
+       First load: fetch + parse (slow, one time only)
+       All subsequent loads: clone from memory (instant)
+    ========================================================= */
+
+    const gltfCache = new Map();   // url → parsed gltf object
+    const loadingPromises = new Map(); // url → in-flight Promise (dedup concurrent requests)
+    const loader = new THREE.GLTFLoader(); // single shared loader instance
+
+    function loadGLTF(url) {
+      // Already cached → return immediately
+      if (gltfCache.has(url)) {
+        return Promise.resolve(gltfCache.get(url));
+      }
+      // Already loading → return same promise (dedup)
+      if (loadingPromises.has(url)) {
+        return loadingPromises.get(url);
+      }
+      // Fresh load
+      const promise = new Promise((resolve, reject) => {
+        loader.load(url, gltf => {
+          gltfCache.set(url, gltf);
+          loadingPromises.delete(url);
+          resolve(gltf);
+        }, undefined, err => {
+          loadingPromises.delete(url);
+          reject(err);
+        });
+      });
+      loadingPromises.set(url, promise);
+      return promise;
+    }
+
+    // Background preload a model URL (silent, no UI impact)
+    function preload(url) {
+      if (!url || gltfCache.has(url) || loadingPromises.has(url)) return;
+      loadGLTF(url).catch(() => {}); // silent fail — preload is best-effort
+    }
+
+    // Collect all unique model URLs from menuData for preloading
+    function getAllModelURLs() {
+      const urls = new Set();
+      menuData.forEach(cat => {
+        cat.items.forEach(item => {
+          if (item.model) urls.add(item.model);
+          if (item.subitems) item.subitems.forEach(s => { if (s.model) urls.add(s.model); });
+        });
+      });
+      return [...urls];
+    }
+
+    // Preload all models during browser idle time
+    // Uses requestIdleCallback so it never blocks UI/rendering
+    function schedulePreload() {
+      const urls = getAllModelURLs();
+      let i = 0;
+      function next(deadline) {
+        // Load one model per idle slice, yield back between each
+        while (i < urls.length && (deadline.timeRemaining() > 10 || deadline.didTimeout)) {
+          preload(urls[i++]);
+          break; // one per callback to stay non-blocking
+        }
+        if (i < urls.length) {
+          requestIdleCallback(next, { timeout: 3000 });
+        }
+      }
+      // Delay first preload by 2s so page render + first paint are not affected
+      setTimeout(() => {
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(next, { timeout: 3000 });
+        } else {
+          // Fallback: load all with small stagger in the background
+          urls.forEach((url, idx) => setTimeout(() => preload(url), 2000 + idx * 500));
+        }
+      }, 2000);
+    }
+
+    /* =========================================================
+       PLATFORM DETECTION
+    ========================================================= */
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isMobile = isIOS || isAndroid;
+
+    /* =========================================================
+       XR VARIABLES
+    ========================================================= */
+
+    let renderer;
+    let scene;
+    let camera;
+
+    let xrSession;
+    let hitTestSource;
+
+    let reticle;
+    let placementRoot;
+    let modelGroup;
+
+    let latestHit = null;
+
+    let placed = false;
+
+    let smoothedPosition = new THREE.Vector3();
+    let smoothedQuaternion = new THREE.Quaternion();
+
+    let reticleInitialized = false;
+
+    let stableFrames = 0;
+
+    let shadowPlane;
+
+    let userScale = 1;
+
+    /* =========================================================
+       DOM
+    ========================================================= */
+
+    const overlay = document.getElementById("overlay");
+    const hint = document.getElementById("hint");
+    const placeBtn = document.getElementById("place-btn");
+    const controls = document.getElementById("controls");
+
+    /* =========================================================
+       START AR
+    ========================================================= */
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && xrSession) {
+        xrSession.end();
+      }
+    });
+
+    function showARError(title, body, fix) {
+      document.getElementById('ar-error-title').innerHTML = title;
+      document.getElementById('ar-error-body').innerHTML = body;
+      document.getElementById('ar-error-fix').innerHTML = fix;
+      document.getElementById('ar-error-modal').classList.add('active');
+    }
+
+    async function launchAR() {
+
+      // ── Desktop ──────────────────────────────────────────────
+      if (!isMobile) {
+        alert("AR is available on Android and iOS mobile devices only.\nYou can view the 3D model here.");
+        return;
+      }
+
+      // ── iOS Safari: AR Quick Look via model-viewer ────────────
+      // iOS Safari has NEVER supported WebXR immersive-ar.
+      // AR Quick Look (triggered by model-viewer) is the only
+      // real AR on iOS and already does surface detection +
+      // tap-to-place natively — no auto spawn, sticks to surface.
+      if (isIOS) {
+        const mvEl = document.getElementById('mv');
+
+        // Ensure correct AR attributes
+        mvEl.setAttribute('ar', '');
+        mvEl.setAttribute('ar-modes', 'quick-look');
+        mvEl.setAttribute('ar-scale', 'fixed');
+        mvEl.setAttribute('ar-placement', 'floor');
+
+        // If model-viewer is already ready, activate immediately
+        if (mvEl.canActivateAR) {
+          mvEl.activateAR();
+          return;
+        }
+
+        // Otherwise wait for the model to load then activate
+        const activate = () => {
+          mvEl.removeEventListener('load', activate);
+          if (mvEl.canActivateAR) {
+            mvEl.activateAR();
+          } else {
+            alert("AR not available on this device. Make sure you're using Safari on iOS 13+.");
+          }
+        };
+        mvEl.addEventListener('load', activate);
+
+        // If model is already loaded but canActivateAR is still false
+        // (can happen before model-viewer fully initialises AR)
+        setTimeout(() => {
+          if (mvEl.canActivateAR) {
+            mvEl.removeEventListener('load', activate);
+            mvEl.activateAR();
+          }
+        }, 800);
+
+        return;
+      }
+
+      // ── Android Chrome: custom WebXR hit-test pipeline ────────
+      if (!navigator.xr) {
+        showARError(
+          "AR Not Available",
+          "Your browser doesn't support WebXR AR.",
+          "Please open this page in <b>Chrome</b> on Android."
+        );
+        return;
+      }
+
+      const supported = await navigator.xr.isSessionSupported("immersive-ar").catch(() => false);
+      if (!supported) {
+        showARError(
+          "AR Not Supported on This Device",
+          "Your device either doesn't have <b>ARCore (Google Play Services for AR)</b> installed, or it's not on Google's supported device list.",
+          `<b>Try these fixes:</b><br>
+           1. Install / update <a href="https://play.google.com/store/apps/details?id=com.google.ar.core" target="_blank" style="color:#d92b2b;font-weight:700;">Google Play Services for AR</a> from the Play Store<br>
+           2. Open this page in <b>Chrome</b> (not Samsung Browser, Firefox, etc.)<br>
+           3. If it still fails, your device may not be on Google's <a href="https://developers.google.com/ar/devices" target="_blank" style="color:#d92b2b;font-weight:700;">ARCore supported list</a>`
+        );
+        return;
+      }
+
+      xrSession = await navigator.xr.requestSession(
+        "immersive-ar",
+        {
+          requiredFeatures: ["hit-test"],
+          optionalFeatures: ["anchors", "dom-overlay", "local-floor", "light-estimation", "depth-sensing"],
+          domOverlay: { root: overlay },
+          depthSensing: {
+            usagePreference: ["cpu-optimized", "gpu-optimized"],
+            dataFormatPreference: ["luminance-alpha", "float32"]
+          }
+        }
+      );
+
+      overlay.classList.add("active");
+
+      if (!renderer) {
+        // Dynamically create the canvas to guarantee a fresh WebGL context every time AR is launched
+        let canvas = document.getElementById("xr-canvas");
+        if (!canvas) {
+          canvas = document.createElement("canvas");
+          canvas.id = "xr-canvas";
+          overlay.insertBefore(canvas, overlay.firstChild);
+        }
+
+        renderer = new THREE.WebGLRenderer({
+          canvas: canvas,
+          alpha: true,
+          antialias: true
+        });
+
+        renderer.xr.enabled = true;
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+
+        /* =====================================================
+           LIGHTS
+        ===================================================== */
+
+        const ambient = new THREE.AmbientLight(
+          0xffffff,
+          1.1
+        );
+
+        scene.add(ambient);
+
+        const dir = new THREE.DirectionalLight(
+          0xffffff,
+          1
+        );
+
+        dir.position.set(1, 3, 2);
+
+        dir.castShadow = true;
+        dir.shadow.mapSize.width = 1024;
+        dir.shadow.mapSize.height = 1024;
+
+        scene.add(dir);
+
+        /* =====================================================
+           RETICLE — outer ring + inner fill circle
+        ===================================================== */
+
+        const reticleGroup = new THREE.Group();
+        reticleGroup.rotation.x = -Math.PI / 2;
+        reticleGroup.visible = false;
+        scene.add(reticleGroup);
+        reticle = reticleGroup; // alias so existing code works
+
+        // Outer ring
+        const outerRingGeo = new THREE.RingGeometry(0.07, 0.10, 48);
+        const outerRingMat = new THREE.MeshBasicMaterial({
+          color: 0xd92b2b, transparent: true, opacity: 0.9, side: THREE.DoubleSide
+        });
+        const outerRing = new THREE.Mesh(outerRingGeo, outerRingMat);
+        reticleGroup.add(outerRing);
+
+        // Inner filled circle (soft)
+        const innerCircleGeo = new THREE.CircleGeometry(0.055, 48);
+        const innerCircleMat = new THREE.MeshBasicMaterial({
+          color: 0xffffff, transparent: true, opacity: 0.25, side: THREE.DoubleSide
+        });
+        const innerCircle = new THREE.Mesh(innerCircleGeo, innerCircleMat);
+        innerCircle.position.z = 0.001;
+        reticleGroup.add(innerCircle);
+
+        // Store ring material ref for pulse animation
+        reticle.material = outerRingMat; // used for opacity pulse
+
+        /* =====================================================
+           ROOT
+        ===================================================== */
+
+        placementRoot = new THREE.Group();
+
+        scene.add(placementRoot);
+
+        modelGroup = new THREE.Group();
+        modelGroup.visible = false;
+
+        placementRoot.add(modelGroup);
+
+        /* =====================================================
+           SHADOW
+        ===================================================== */
+
+        shadowPlane = new THREE.Mesh(
+          new THREE.PlaneGeometry(1, 1),
+          new THREE.ShadowMaterial({
+            opacity: 0.3
+          })
+        );
+
+        shadowPlane.rotation.x = -Math.PI / 2;
+        shadowPlane.receiveShadow = true;
+        shadowPlane.visible = false;
+        placementRoot.add(shadowPlane);
+      }
+
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      // Ensure fresh state for new sessions
+      modelGroup.visible = false;
+      shadowPlane.visible = false;
+      reticle.visible = false;
+      placed = false;
+      reticleInitialized = false;
+      userScale = 1.0;  // model is normalized to currentModelScale meters
+      hint.innerHTML = "Move phone slowly to detect surface...";
+      placeBtn.classList.remove("ready");
+      controls.classList.remove("visible");
+
+      mv.style.display = "none";
+      await loadModel();
+
+      /* =====================================================
+         XR SETUP
+      ===================================================== */
+
+      // viewer space is used ONLY for the hit-test ray origin
+      const viewerSpace = await xrSession.requestReferenceSpace("viewer");
+
+      try {
+        hitTestSource = await xrSession.requestHitTestSource({ 
+          space: viewerSpace,
+          entityTypes: ["plane", "point"]
+        });
+      } catch (e) {
+        hitTestSource = await xrSession.requestHitTestSource({ space: viewerSpace });
+      }
+
+      // local-floor anchors world objects to the floor — prevents floating
+      // Fall back to local if local-floor unavailable
+      let worldRefSpace;
+      try {
+        worldRefSpace = await xrSession.requestReferenceSpace("local-floor");
+      } catch(e) {
+        worldRefSpace = await xrSession.requestReferenceSpace("local");
+      }
+      // Store on session so renderXR can access it
+      xrSession._worldRefSpace = worldRefSpace;
+
+      placeBtn.onclick = placeModel;
+
+      renderer.xr.setSession(xrSession);
+      renderer.setAnimationLoop(renderXR);
+
+      xrSession.addEventListener("end", onSessionEnd);
+
+      // 'select' = screen tap on both Android and iOS — only place if reticle is ready
+      xrSession.addEventListener("select", () => {
+        if (!placed && reticle && reticle.visible) {
+          placeModel();
+        }
+      });
+
+      overlay.addEventListener("touchstart", onTouchStart, { passive: false });
+      overlay.addEventListener("touchmove", onTouchMove, { passive: false });
+      overlay.addEventListener("touchend", onTouchEnd);
+    }
+
+    /* =========================================================
+       LOAD MODEL (Android AR — uses GLB cache)
+    ========================================================= */
+
+    async function loadModel() {
+
+      // Clear previous model
+      while (modelGroup.children.length > 0) {
+        const child = modelGroup.children[0];
+        modelGroup.remove(child);
+        // Dispose geometries/materials to free GPU memory
+        child.traverse(o => {
+          if (o.geometry) o.geometry.dispose();
+          if (o.material) {
+            if (Array.isArray(o.material)) o.material.forEach(m => m.dispose());
+            else o.material.dispose();
+          }
+        });
+      }
+
+      // Load from cache (instant) or fetch+parse (first time only)
+      const gltf = await loadGLTF(currentModelURL);
+
+      // Clone the cached scene so the original stays clean for reuse
+      const model = gltf.scene.clone(true);
+
+      model.traverse(o => {
+        if (o.isMesh) {
+          o.castShadow = true;
+          o.receiveShadow = true;
+        }
+      });
+
+      /* =====================================================
+         NORMALIZE SCALE
+      ===================================================== */
+
+      const box = new THREE.Box3().setFromObject(model);
+      const size = box.getSize(new THREE.Vector3());
+      const maxAxis = Math.max(size.x, size.y, size.z);
+      const targetMeters = currentModelScale;
+      const scale = targetMeters / maxAxis;
+      model.scale.setScalar(scale);
+
+      box.setFromObject(model);
+      const center = box.getCenter(new THREE.Vector3());
+      model.position.x -= center.x;
+      model.position.z -= center.z;
+
+      const downwardOffset = 0.005;
+      model.position.y -= (box.min.y + downwardOffset);
+
+      modelGroup.add(model);
+      modelGroup.scale.setScalar(userScale);
+
+      shadowPlane.scale.setScalar(targetMeters * 1.0);
+    }
+
+    /* =========================================================
+       MATH HELPERS FOR PERFORMANCE
+    ========================================================= */
+
+    const tempMatrix = new THREE.Matrix4();
+    const tempPos = new THREE.Vector3();
+    const tempFullQ = new THREE.Quaternion();
+    const tempEuler = new THREE.Euler();
+    const tempEulerFlat = new THREE.Euler();
+    const tempFlatQ = new THREE.Quaternion();
+
+    /* =========================================================
+       FRAME LOOP
+    ========================================================= */
+
+    function renderXR(time, frame) {
+
+      if (!frame) return;
+
+      // Use the world reference space (local-floor) for stable hit-test pose
+      const refSpace = xrSession && xrSession._worldRefSpace
+        ? xrSession._worldRefSpace
+        : renderer.xr.getReferenceSpace();
+
+      if (!placed && refSpace && hitTestSource) {
+
+        const hits = frame.getHitTestResults(hitTestSource);
+
+        if (hits.length > 0) {
+
+          latestHit = hits[0];
+
+          const pose = latestHit.getPose(refSpace);
+
+          if (pose) {
+
+            const transform = pose.transform;
+
+            tempMatrix.fromArray(transform.matrix);
+            tempPos.setFromMatrixPosition(tempMatrix);
+
+            const q = transform.orientation;
+            tempFullQ.set(q.x, q.y, q.z, q.w);
+
+            // Flatten rotation to Y-axis only so reticle lies flat on surface
+            tempEuler.setFromQuaternion(tempFullQ, "YXZ");
+            tempEulerFlat.set(0, tempEuler.y, 0, "YXZ");
+            tempFlatQ.setFromEuler(tempEulerFlat);
+
+            /* =========================================
+               SMOOTHING — gentle lerp so reticle
+               glides to surface without jitter
+            ========================================= */
+
+            if (!reticleInitialized) {
+              smoothedPosition.copy(tempPos);
+              smoothedQuaternion.copy(tempFlatQ);
+              reticleInitialized = true;
+            } else {
+              smoothedPosition.lerp(tempPos, 0.3);
+              smoothedQuaternion.slerp(tempFlatQ, 0.3);
+            }
+
+            reticle.position.copy(smoothedPosition);
+            reticle.quaternion.copy(smoothedQuaternion);
+            reticle.visible = true;
+
+            // Pulse opacity
+            reticle.material.opacity = 0.55 + Math.sin(time * 0.005) * 0.2;
+
+            placeBtn.classList.add("ready");
+            hint.innerHTML = "Surface found • Tap to place";
+          }
+
+        } else {
+
+          reticle.visible = false;
+          latestHit = null;
+          placeBtn.classList.remove("ready");
+          hint.innerHTML = "Move phone slowly to detect surface...";
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    /* =========================================================
+       PLACE MODEL
+    ========================================================= */
+
+    function placeModel() {
+
+      // Only place if we have a valid surface hit and reticle is visible
+      if (!latestHit || !reticle || !reticle.visible) return;
+      if (placed) return; // prevent double-placement
+
+      // Snap placementRoot to the exact smoothed reticle world position
+      placementRoot.position.copy(smoothedPosition);
+      placementRoot.quaternion.copy(smoothedQuaternion);
+
+      modelGroup.visible = true;
+      shadowPlane.visible = true;
+      placed = true;
+
+      controls.classList.add("visible");
+      placeBtn.classList.remove("ready");
+      hint.innerHTML = "Dish placed 🎉 Drag to move • Pinch to resize";
+
+      reticle.visible = false;
+
+      // Cancel hit-testing immediately — model is now frozen in world space
+      if (hitTestSource) {
+        hitTestSource.cancel();
+        hitTestSource = null;
+      }
+
+      latestHit = null;
+    }
+
+    /* =========================================================
+       SCALE
+    ========================================================= */
+
+    function scaleModel(mult) {
+
+      userScale *= mult;
+
+      userScale = Math.max(
+        0.3,
+        Math.min(userScale, 3)
+      );
+
+      modelGroup.scale.setScalar(userScale);
+    }
+
+    /* =========================================================
+       STOP
+    ========================================================= */
+
+    function stopAR() {
+
+      if (xrSession) {
+        xrSession.end();
+      }
+    }
+
+    function onSessionEnd() {
+
+      mv.style.display = "block";
+      overlay.classList.remove("active");
+
+      if (renderer) {
+        renderer.setAnimationLoop(null);
+      }
+
+      xrSession = null;
+      if (hitTestSource) {
+        hitTestSource.cancel();
+        hitTestSource = null;
+      }
+      placed = false;
+      latestHit = null;
+      stableFrames = 0;
+      reticleInitialized = false;
+      controls.classList.remove("visible");
+      hint.innerHTML = "Move phone slowly to detect surface...";
+
+      overlay.removeEventListener("touchstart", onTouchStart);
+      overlay.removeEventListener("touchmove", onTouchMove);
+      overlay.removeEventListener("touchend", onTouchEnd);
+    }
+
+    /* =========================================================
+       TOUCH INTERACTIONS
+    ========================================================= */
+
+    let isDragging = false;
+    let initialPinchDist = 0;
+    let initialUserScale = 1;
+
+    let lastTouchX = 0;
+    let lastTouchY = 0;
+
+    function getPinchDist(e) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function onTouchStart(e) {
+      if (!placed) return;
+
+      if (e.touches.length === 1) {
+        isDragging = true;
+        lastTouchX = e.touches[0].clientX;
+        lastTouchY = e.touches[0].clientY;
+      } else if (e.touches.length === 2) {
+        isDragging = false;
+        initialPinchDist = getPinchDist(e);
+        initialUserScale = userScale;
+      }
+    }
+
+    function onTouchMove(e) {
+      e.preventDefault();
+      if (!placed) return;
+
+      if (e.touches.length === 1 && isDragging) {
+        const dx = e.touches[0].clientX - lastTouchX;
+        const dy = e.touches[0].clientY - lastTouchY;
+
+        lastTouchX = e.touches[0].clientX;
+        lastTouchY = e.touches[0].clientY;
+
+        const xrCamera = renderer.xr.getCamera(camera);
+        const activeCamera = xrCamera.cameras.length > 0 ? xrCamera.cameras[0] : xrCamera;
+
+        const moveSpeed = 0.001;
+
+        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(activeCamera.quaternion);
+        right.y = 0;
+        right.normalize();
+
+        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(activeCamera.quaternion);
+        forward.y = 0;
+        forward.normalize();
+
+        // Inverted signs to fix the reverse movement issue
+        placementRoot.position.addScaledVector(right, -dx * moveSpeed);
+        placementRoot.position.addScaledVector(forward, dy * moveSpeed);
+
+      } else if (e.touches.length === 2) {
+        const dist = getPinchDist(e);
+        const scaleMult = dist / initialPinchDist;
+        userScale = initialUserScale * scaleMult;
+        userScale = Math.max(0.3, Math.min(userScale, 3));
+        modelGroup.scale.setScalar(userScale);
+      }
+    }
+
+    function onTouchEnd(e) {
+      if (e.touches.length < 2) {
+        initialPinchDist = 0;
+      }
+      if (e.touches.length === 0) {
+        isDragging = false;
+      }
+    }
+  </script>
+</body>
+</html>
