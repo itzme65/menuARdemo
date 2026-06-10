@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+  <title>DineAR - Modern Restaurant Experience</title>
+
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+  <link rel="preconnect" href="https://ajax.googleapis.com">
+  <link rel="dns-prefetch" href="https://ajax.googleapis.com">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-color: #f8fafc;
+      --surface-color: #ffffff;
+      --surface-hover: #f1f5f9;
+      --primary: #f97316;
+      --primary-hover: #ea580c;
+      --secondary: #fb923c;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --font-display: 'Playfair Display', serif;
+      --font-body: 'Outfit', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      width: 100%; height: 100%; font-family: var(--font-body);
+      background: var(--bg-color);
+      color: var(--text-main); overflow-x: hidden;
+    }
+
+    .app-container { display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 40px; }
+
+    header {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky; top: 0; z-index: 5;
+    }
+    .header-top {
+      background: var(--primary);
+      color: white; padding: 8px 20px; display: flex; justify-content: space-between;
+      font-size: 13px; font-weight: 600; letter-spacing: 0.5px;
+    }
+    .header-main { padding: 24px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+
+    .brand-title {
+      font-family: var(--font-display); font-size: 42px; letter-spacing: 1px; line-height: 1;
+      color: var(--text-main);
+    }
+    .tagline { font-weight: 400; font-size: 15px; color: var(--primary); letter-spacing: 1.5px; text-transform: uppercase; }
+
+    .hero {
+      margin: 20px; border-radius: 24px;
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      padding: 40px 20px; text-align: center; position: relative; overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    .hero h2 { font-size: 28px; margin-bottom: 12px; font-weight: 800; font-family: var(--font-display); }
+    .hero p { color: var(--text-muted); font-size: 16px; font-weight: 400; }
+
+    .categories { display: flex; gap: 12px; padding: 0 20px 20px; overflow-x: auto; scrollbar-width: none; }
+    .categories::-webkit-scrollbar { display: none; }
+    .category-btn {
+      background: white; color: var(--text-muted);
+      border: 1px solid var(--border-color); border-radius: 999px;
+      padding: 12px 24px; font-size: 15px; font-weight: 600; cursor: pointer;
+      white-space: nowrap; transition: all 0.3s ease;
+      font-family: var(--font-body); box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+    .category-btn.active {
+      background: var(--primary); color: white; border-color: var(--primary);
+      box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+    }
+    .category-btn:not(.active):hover { background: var(--surface-hover); color: var(--text-main); }
+
+    .menu-list { padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
+    .menu-card {
+      background: var(--surface-color); border-radius: 16px; overflow: hidden;
+      border: 1px solid var(--border-color); display: flex; flex-direction: column;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: transform 0.2s ease, box-shadow 0.2s ease;
+      padding: 24px;
+    }
+    .menu-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.08); transform: translateY(-2px); }
+    .menu-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 12px; }
+    .menu-card-title { font-size: 22px; font-weight: 600; color: var(--text-main); font-family: var(--font-display); }
+    .menu-card-desc { font-size: 15px; color: var(--text-muted); font-weight: 400; line-height: 1.6; margin-bottom: 20px; }
+    .menu-card-sizes { display: flex; flex-wrap: wrap; gap: 10px; }
+    .size-pill { background: #f1f5f9; color: var(--text-main); font-size: 14px; font-weight: 500; padding: 6px 14px; border-radius: 8px; border: 1px solid #cbd5e1; }
+    .size-pill .price { color: var(--primary); font-weight: 700; margin-left: 6px; }
+
+    .ar-btn {
+      background: var(--primary); color: white; border: none; border-radius: 50px;
+      padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(249, 115, 22, 0.2);
+      transition: all 0.2s ease; white-space: nowrap; flex-shrink: 0;
+    }
+    .ar-btn:hover { background: var(--primary-hover); transform: scale(1.05); }
+
+    footer {
+      background: var(--surface-color); padding: 40px 20px; margin-top: 40px;
+      text-align: center; border-top: 1px solid var(--border-color);
+    }
+    .footer-placeholder {
+      width: 100%; padding: 20px; border: 1px dashed var(--border-color);
+      background: #f8fafc; color: var(--text-muted);
+      font-size: 14px; border-radius: 16px; margin-bottom: 20px; font-weight: 400;
+    }
+
+    /* === VIEWER CARD === */
+    .viewer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 50; display: none; opacity: 0; transition: opacity 0.3s ease; align-items: flex-end; }
+    .viewer-overlay.active { display: flex; opacity: 1; }
+
+    .viewer-card {
+      width: 100%; background: var(--surface-color); border-radius: 32px 32px 0 0; padding: 30px 24px;
+      transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+      display: flex; flex-direction: column;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+    }
+    .viewer-overlay.active .viewer-card { transform: translateY(0); }
+
+    .viewer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .viewer-title h2 { font-size: 24px; font-weight: 600; font-family: var(--font-display); color: var(--text-main); }
+    .viewer-title .viewer-price { color: var(--primary); font-weight: 500; font-size: 16px; margin-top: 6px; }
+
+    .close-viewer { background: #f1f5f9; border: none; color: var(--text-main); width: 40px; height: 40px; border-radius: 50%; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s;}
+    .close-viewer:hover { background: #e2e8f0; }
+
+    model-viewer { width: 100%; height: 35vh; min-height: 250px; background: transparent; outline: none; border-radius: 24px; transition: opacity 0.3s ease; }
+    model-viewer::part(default-progress-bar) { display: none; }
+
+    .mv-loading-wrap { position: relative; width: 100%; height: 35vh; min-height: 250px; border-radius: 24px; overflow: hidden; background: #f8fafc; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); }
+    .mv-loading-wrap model-viewer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; }
+    .mv-spinner { position: absolute; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; pointer-events: none; transition: opacity 0.3s; }
+    .mv-spinner.hidden { opacity: 0; }
+    .mv-spinner-ring { width: 44px; height: 44px; border: 3px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .mv-spinner-text { font-size: 13px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.5px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .cache-badge { position: absolute; top: 12px; left: 12px; z-index: 3; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #059669; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .cache-badge.show { opacity: 1; }
+
+    .launch-btn { margin-top: 24px; background: var(--primary); color: white; border: none; border-radius: 16px; padding: 18px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; display: flex; justify-content: center; align-items: center; gap: 12px; box-shadow: 0 8px 20px rgba(249, 115, 22, 0.2); transition: transform 0.2s, box-shadow 0.2s; }
+    .launch-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(249, 115, 22, 0.3); background: var(--primary-hover); }
+
+    /* === AR ERROR MODAL === */
+    .ar-error-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 24px; }
+    .ar-error-modal.active { display: flex; }
+    .ar-error-box { background: white; border: 1px solid var(--border-color); border-radius: 24px; padding: 32px 24px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+    .ar-error-icon { font-size: 42px; margin-bottom: 16px; }
+    .ar-error-title { font-size: 20px; font-weight: 600; margin-bottom: 10px; color: var(--text-main); font-family: var(--font-display); }
+    .ar-error-body { font-size: 14px; line-height: 1.6; color: var(--text-muted); margin-bottom: 16px; }
+    .ar-error-fix { font-size: 13px; line-height: 1.6; color: var(--text-muted); background: #f8fafc; border-left: 3px solid var(--primary); padding: 16px; border-radius: 12px; margin-bottom: 24px; text-align: left; }
+    .ar-error-close { width: 100%; background: var(--primary); color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; }
+
+    #overlay { position: fixed; inset: 0; z-index: 9999; display: none; }
+    #overlay.active { display: block; }
+
+    #xr-canvas { width: 100%; height: 100%; touch-action: none; position: absolute; top: 0; left: 0; z-index: -1; }
+
+    .hint { position: absolute; bottom: 130px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border: 1px solid rgba(0,0,0,0.1); color: var(--text-main); padding: 16px 28px; border-radius: 999px; font-size: 14px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+
+    .place-btn { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; border: none; border-radius: 999px; padding: 18px 36px; font-size: 16px; font-weight: 600; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); opacity: 0; pointer-events: none; transition: 0.3s; }
+    .place-btn.ready { opacity: 1; pointer-events: auto; }
+
+    .close-ar-btn { position: absolute; top: 40px; right: 20px; width: 50px; height: 50px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); color: var(--text-main); font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+
+    .controls { position: absolute; right: 20px; bottom: 60px; display: flex; flex-direction: column; gap: 16px; opacity: 0; pointer-events: none; transition: 0.3s; }
+    .controls.visible { opacity: 1; pointer-events: auto; }
+    .controls button { width: 56px; height: 56px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); color: var(--text-main); font-size: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+  </style>
+</head>
+
+<body>
+
+  <div class="app-container">
+    <header>
+      <div class="header-top">
+        <span>Delivery: +1 (800) 555-DINE</span>
+        <span>Support: +1 (800) 555-HELP</span>
+      </div>
+      <div class="header-main">
+        <div class="brand-title">DineAR</div>
+        <div class="tagline">Experience Food in 3D</div>
+      </div>
+    </header>
+
+    <div class="hero">
+      <h2>Interactive Menu</h2>
+      <p>Preview our signature dishes in stunning Augmented Reality right on your table.</p>
+    </div>
+
+    <div class="categories" id="category-container"></div>
+    <div class="menu-list" id="menu-container"></div>
+
+    <footer>
+      <div class="footer-placeholder">📍 123 Visionary Way, Tech District</div>
+      <div class="footer-placeholder">🌐 Follow us @DineAR_Experience</div>
+      <p style="font-size: 13px; color: var(--text-muted); font-weight: 300;">© 2026 DineAR Solutions.</p>
+    </footer>
+  </div>
+
+  <!-- VIEWER CARD -->
+  <div class="viewer-overlay" id="viewer-overlay">
+    <div class="viewer-card">
+      <div class="viewer-header">
+        <div class="viewer-title">
+          <h2 id="viewer-name">Item Name</h2>
+          <div class="viewer-price" id="viewer-price">$0.00</div>
+        </div>
+        <button class="close-viewer" onclick="closeViewer()">✕</button>
+      </div>
+
+      <div class="mv-loading-wrap">
+        <model-viewer id="mv" src="" camera-controls auto-rotate shadow-intensity="0" exposure="0.82" tone-mapping="commerce" environment-image="neutral" ar ar-modes="quick-look" ar-scale="fixed" ar-placement="floor">
+          <button slot="ar-button" id="mv-ar-btn" style="display:none"></button>
+        </model-viewer>
+        <div class="mv-spinner" id="mv-spinner">
+          <div class="mv-spinner-ring"></div>
+          <div class="mv-spinner-text">Loading 3D model...</div>
+        </div>
+        <div class="cache-badge" id="cache-badge">⚡ Instant</div>
+      </div>
+
+      <button class="launch-btn" id="launch-ar-btn" onclick="launchAR()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        View in Your Space
+      </button>
+    </div>
+  </div>
+
+  <!-- AR ERROR MODAL -->
+  <div class="ar-error-modal" id="ar-error-modal">
+    <div class="ar-error-box">
+      <div class="ar-error-icon">📵</div>
+      <div class="ar-error-title" id="ar-error-title">AR Not Available</div>
+      <div class="ar-error-body" id="ar-error-body"></div>
+      <div class="ar-error-fix" id="ar-error-fix"></div>
+      <button class="ar-error-close" onclick="document.getElementById('ar-error-modal').classList.remove('active')">Got it</button>
+    </div>
+  </div>
+
+  <!-- CUSTOM AR OVERLAY (Android WebXR) -->
+  <div id="overlay">
+    <canvas id="xr-canvas"></canvas>
+    <button class="close-ar-btn" onclick="stopAR()">✕</button>
+    <div class="hint" id="hint">Point at a flat surface</div>
+    <button class="place-btn" id="place-btn">Place Dish</button>
+
+    <div class="controls" id="controls">
+      <button onclick="scaleModel(1.1)">+</button>
+      <button onclick="scaleModel(0.9)">−</button>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================
+       DATA STRUCTURE
+    ========================================================= */
+    const addOnsConfig = {
+      pizza: [
+        { name: "Extra Cheese", price: 2.50 },
+        { name: "Truffle Oil", price: 3.00 },
+        { name: "Gluten-Free Crust", price: 4.00 }
+      ],
+      burger: [
+        { name: "Extra Patty", price: 4.50 },
+        { name: "Bacon", price: 2.00 },
+        { name: "Caramelized Onions", price: 1.50 }
+      ],
+      setMenu: [
+        { name: "Side Salad", price: 3.50 },
+        { name: "Roasted Veggies", price: 4.00 }
+      ]
+    };
+
+    const menuData = [
+      {
+        category: "GOURMET PIZZA", addonType: "pizza",
+        items: [
+          {
+            name: "Truffle Mushroom Supreme",
+            desc: "Wild mushrooms, truffle oil, mozzarella, parmesan.",
+            model: "models/pizza1.glb",
+            scale: 0.35,
+            subitems: [{ name: "Small 10\"", price: 16.00 }, { name: "Medium 12\"", price: 22.00 }, { name: "Large 14\"", price: 28.00 }]
+          },
+          { name: "Spicy Diavola",
+            desc: "Spicy salami, chili flakes, fresh mozzarella.",
+            model: "models/pizza.glb",
+            scale: 0.35,
+            subitems: [{ name: "Small 10\"", price: 15.00, model: "models/pizza.glb", scale: 0.25 }, { name: "Medium 12\"", price: 21.00, model: "models/pizza.glb", scale: 0.3 }, { name: "Large 14\"", price: 26.00, model: "models/pizza.glb", scale: 0.35 }]
+          },
+          { name: "Classic Margherita", desc: "San Marzano tomatoes, fresh basil, mozzarella.", subitems: [{ name: "Small 10\"", price: 12.00, model: "models/pizza.glb", scale: 0.25 }, { name: "Medium 12\"", price: 16.00, model: "models/pizza.glb", scale: 0.3 }, { name: "Large 14\"", price: 20.00, model: "models/pizza.glb", scale: 0.35 }] }
+        ]
+      },
+      {
+        category: "SIGNATURE BURGERS", addonType: "burger",
+        items: [
+          { name: "The Classic Smash",
+          desc: "Double smashed patty, American cheese, house sauce.",
+          model: "models/burger.glb",
+          scale: 0.35,
+          subitems: [{ name: "Single", price: 12.00, model: "models/burger.glb", scale: 0.15 }, { name: "Double", price: 15.00, model: "models/burger.glb", scale: 0.16 }] },
+          { name: "Blue Cheese & Bacon", desc: "Thick patty, crumbled blue cheese, crispy bacon.", subitems: [{ name: "Regular", price: 16.00, model: "models/burger.glb", scale: 0.15 }] },
+          { name: "Spicy Jalapeño Crunch", desc: "Pepper jack, fresh jalapeños, spicy mayo.", subitems: [{ name: "Regular", price: 15.50, model: "models/burger.glb", scale: 0.15 }] }
+        ]
+      },
+      {
+        category: "CHEF'S SPECIALS", addonType: "setMenu",
+        items: [
+          { name: "Steak Frites", desc: "10oz Ribeye, garlic herb butter, truffle fries.", subitems: [{ name: "Standard", price: 35.00, model: "models/burger.glb", scale: 0.25 }] },
+          { name: "Roasted Salmon", desc: "Wild-caught salmon, quinoa pilaf, asparagus.", subitems: [{ name: "Standard", price: 28.00, model: "models/burger.glb", scale: 0.25 }] }
+        ]
+      },
+      {
+        category: "DRINKS & SIDES", addonType: null,
+        items: [
+          { name: "Craft Beverages", desc: "Locally sourced sodas and fresh juices.", subitems: [{ name: "Lemonade", price: 4.50, model: "models/pizza.glb", scale: 0.1 }, { name: "Iced Tea", price: 3.50, model: "models/pizza.glb", scale: 0.1 }] },
+          { name: "Truffle Parmesan Fries", desc: "Shoestring fries tossed in truffle oil and parmesan.", subitems: [{ name: "Regular", price: 8.00, model: "models/pizza.glb", scale: 0.2 }] }
+        ]
+      }
+    ];
+
+    /* =========================================================
+       PLATFORM DETECTION
+    ========================================================= */
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isMobile = isIOS || isAndroid;
+
+    /* =========================================================
+       MODEL PIPELINE — single GLB fetch, shared by
+       model-viewer (blob URL) and Three.js (parse)
+       LRU cache keeps RAM bounded for 20–40 models
+    ========================================================= */
+    const MAX_GLTF_CACHE = 8;
+    const CACHE_STORE = 'dinear-models-v1';
+    const loader = new THREE.GLTFLoader();
+
+    const gltfCache = new Map();       // url → { gltf, order }
+    const byteCache = new Map();       // url → ArrayBuffer (persists even when GLTF evicted)
+    const blobUrlCache = new Map();    // url → blob:
+    const loadingPromises = new Map(); // url → Promise
+    const normalizedCache = new Map(); // "url|scale" → THREE.Group template
+    let cacheOrder = 0;
+
+    const measureBox = new THREE.Box3();
+    const measureSize = new THREE.Vector3();
+    const measureCenter = new THREE.Vector3();
+
+    function isModelCached(url) {
+      return gltfCache.has(url);
+    }
+
+    function touchCache(url) {
+      const entry = gltfCache.get(url);
+      if (entry) entry.order = ++cacheOrder;
+    }
+
+    function disposeGLTF(gltf) {
+      if (!gltf || !gltf.scene) return;
+      gltf.scene.traverse(o => {
+        if (o.geometry) o.geometry.dispose();
+        if (o.material) {
+          if (Array.isArray(o.material)) o.material.forEach(m => m.dispose());
+          else o.material.dispose();
+        }
+      });
+    }
+
+    function evictOldestGLTF() {
+      let oldestUrl = null;
+      let oldestOrder = Infinity;
+      gltfCache.forEach((entry, url) => {
+        if (entry.order < oldestOrder) {
+          oldestOrder = entry.order;
+          oldestUrl = url;
+        }
+      });
+      if (!oldestUrl) return;
+      disposeGLTF(gltfCache.get(oldestUrl).gltf);
+      gltfCache.delete(oldestUrl);
+      normalizedCache.forEach((group, key) => {
+        if (key.startsWith(oldestUrl + '|')) {
+          group.traverse(o => {
+            if (o.geometry) o.geometry.dispose();
+            if (o.material) {
+              if (Array.isArray(o.material)) o.material.forEach(m => m.dispose());
+              else o.material.dispose();
+            }
+          });
+          normalizedCache.delete(key);
+        }
+      });
+    }
+
+    async function fetchModelBytes(url) {
+      if (byteCache.has(url)) return byteCache.get(url);
+
+      if ('caches' in window) {
+        try {
+          const cache = await caches.open(CACHE_STORE);
+          const hit = await cache.match(url);
+          if (hit) {
+            const buffer = await hit.arrayBuffer();
+            byteCache.set(url, buffer);
+            return buffer;
+          }
+        } catch (_) { /* ignore */ }
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch ' + url);
+      const buffer = await response.arrayBuffer();
+      byteCache.set(url, buffer);
+
+      if ('caches' in window) {
+        try {
+          const cache = await caches.open(CACHE_STORE);
+          cache.put(url, new Response(buffer.slice(0)));
+        } catch (_) { /* ignore */ }
+      }
+
+      return buffer;
+    }
+
+    function getBlobUrl(url) {
+      if (blobUrlCache.has(url)) return blobUrlCache.get(url);
+      const bytes = byteCache.get(url);
+      if (!bytes) return url;
+      const blob = new Blob([bytes], { type: 'model/gltf-binary' });
+      const blobUrl = URL.createObjectURL(blob);
+      blobUrlCache.set(url, blobUrl);
+      return blobUrl;
+    }
+
+    function parseGLTF(buffer, url) {
+      const basePath = url.includes('/') ? url.substring(0, url.lastIndexOf('/') + 1) : '';
+      return new Promise((resolve, reject) => {
+        loader.parse(buffer, basePath, resolve, reject);
+      });
+    }
+
+    async function loadGLTF(url) {
+      if (gltfCache.has(url)) {
+        touchCache(url);
+        return gltfCache.get(url).gltf;
+      }
+      if (loadingPromises.has(url)) return loadingPromises.get(url);
+
+      const promise = (async () => {
+        const buffer = await fetchModelBytes(url);
+        if (gltfCache.has(url)) {
+          touchCache(url);
+          return gltfCache.get(url).gltf;
+        }
+        if (gltfCache.size >= MAX_GLTF_CACHE) evictOldestGLTF();
+        const gltf = await parseGLTF(buffer, url);
+        gltfCache.set(url, { gltf, order: ++cacheOrder });
+        return gltf;
+      })();
+
+      loadingPromises.set(url, promise);
+      try {
+        return await promise;
+      } finally {
+        loadingPromises.delete(url);
+      }
+    }
+
+    function normalizeKey(url, scale) {
+      return url + '|' + scale;
+    }
+
+    function buildNormalizedModel(gltf, targetMeters) {
+      const model = gltf.scene.clone(true);
+      measureBox.setFromObject(model);
+      measureBox.getSize(measureSize);
+      const maxAxis = Math.max(measureSize.x, measureSize.y, measureSize.z);
+      if (maxAxis > 0) model.scale.setScalar(targetMeters / maxAxis);
+
+      measureBox.setFromObject(model);
+      measureBox.getCenter(measureCenter);
+      model.position.x -= measureCenter.x;
+      model.position.z -= measureCenter.z;
+      model.position.y -= measureBox.min.y + 0.005;
+
+      return model;
+    }
+
+    async function getNormalizedTemplate(url, scale) {
+      const key = normalizeKey(url, scale);
+      if (normalizedCache.has(key)) return normalizedCache.get(key);
+
+      const gltf = await loadGLTF(url);
+      const template = buildNormalizedModel(gltf, scale);
+      normalizedCache.set(key, template);
+      return template;
+    }
+
+    function applyQuickLookScale(mvEl, gltf, targetMeters) {
+      const tempScene = gltf.scene.clone(true);
+      measureBox.setFromObject(tempScene);
+      measureBox.getSize(measureSize);
+      const maxAxis = Math.max(measureSize.x, measureSize.y, measureSize.z);
+      if (maxAxis === 0) return;
+      const scaleFactor = targetMeters / maxAxis;
+      mvEl.setAttribute('scale', scaleFactor + ' ' + scaleFactor + ' ' + scaleFactor);
+    }
+
+    /* =========================================================
+       TIERED PRELOAD — high: active dish, medium: category, low: rest
+    ========================================================= */
+    const preloadQueue = { high: [], medium: [], low: [] };
+    let preloadScheduled = false;
+
+    function queuePreload(url, priority) {
+      if (!url || isModelCached(url) || loadingPromises.has(url)) return;
+      const list = priority === 0 ? preloadQueue.high : priority === 1 ? preloadQueue.medium : preloadQueue.low;
+      if (!list.includes(url)) list.push(url);
+      schedulePreloadWorker();
+    }
+
+    function schedulePreloadWorker() {
+      if (preloadScheduled) return;
+      preloadScheduled = true;
+
+      const tick = (deadline) => {
+        preloadScheduled = false;
+        const url = preloadQueue.high.shift() || preloadQueue.medium.shift() || preloadQueue.low.shift();
+        if (!url) return;
+
+        loadGLTF(url).catch(() => {});
+        if (preloadQueue.high.length || preloadQueue.medium.length || preloadQueue.low.length) {
+          preloadScheduled = true;
+          if ('requestIdleCallback' in window) {
+            requestIdleCallback(tick, { timeout: 2000 });
+          } else {
+            setTimeout(() => tick({ timeRemaining: () => 50, didTimeout: true }), 300);
+          }
+        }
+      };
+
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(tick, { timeout: 2000 });
+      } else {
+        setTimeout(() => tick({ timeRemaining: () => 50, didTimeout: true }), 300);
+      }
+    }
+
+    function getAllModelURLs() {
+      const urls = new Set();
+      menuData.forEach(cat => {
+        cat.items.forEach(item => {
+          if (item.model) urls.add(item.model);
+          if (item.subitems) item.subitems.forEach(s => { if (s.model) urls.add(s.model); });
+        });
+      });
+      return [...urls];
+    }
+
+    function getCategoryModelURLs(categoryData) {
+      const urls = new Set();
+      if (!categoryData) return [];
+      categoryData.items.forEach(item => {
+        if (item.model) urls.add(item.model);
+        if (item.subitems) item.subitems.forEach(s => { if (s.model) urls.add(s.model); });
+      });
+      return [...urls];
+    }
+
+    function bootstrapPreload() {
+      getAllModelURLs().forEach(url => queuePreload(url, 2));
+    }
+
+    /* =========================================================
+       UI
+    ========================================================= */
+    const categoryContainer = document.getElementById('category-container');
+    const menuContainer = document.getElementById('menu-container');
+    const viewerOverlay = document.getElementById('viewer-overlay');
+    const mv = document.getElementById('mv');
+
+    let activeCategory = menuData[0].category;
+    let currentModelURL = '';
+    let currentModelScale = 0.8;
+    let currentMvSrc = '';
+
+    function initUI() {
+      renderCategories();
+      renderMenu();
+    }
+
+    function renderCategories() {
+      categoryContainer.innerHTML = '';
+      menuData.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'category-btn ' + (cat.category === activeCategory ? 'active' : '');
+        btn.innerText = cat.category;
+        btn.onclick = () => {
+          activeCategory = cat.category;
+          renderCategories();
+          renderMenu();
+        };
+        categoryContainer.appendChild(btn);
+      });
+    }
+
+    function renderMenu() {
+      menuContainer.innerHTML = '';
+      const categoryData = menuData.find(c => c.category === activeCategory);
+      if (!categoryData) return;
+
+      getCategoryModelURLs(categoryData).forEach(url => queuePreload(url, 1));
+
+      categoryData.items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'menu-card';
+
+        let arButtonHtml = '';
+        const hasMainModel = item.model && item.scale;
+
+        if (hasMainModel) {
+          const fakeSub = { name: '3D Preview', price: item.subitems ? item.subitems[0].price : 0, model: item.model, scale: item.scale };
+          const subDataStr = JSON.stringify(fakeSub).replace(/"/g, '&quot;');
+          const itemNameStr = item.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+          arButtonHtml = `
+            <button class="ar-btn" onclick='openViewer(${subDataStr}, "${itemNameStr}")'>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+              View 3D
+            </button>
+          `;
+        }
+
+        let sizesHtml = '';
+        if (item.subitems && item.subitems.length > 0) {
+          sizesHtml = '<div class="menu-card-sizes">';
+          item.subitems.forEach(sub => {
+            const priceStr = typeof sub.price === 'number' ? sub.price.toFixed(2) : sub.price;
+            sizesHtml += '<div class="size-pill">' + sub.name + ' <span class="price">$' + priceStr + '</span></div>';
+          });
+          sizesHtml += '</div>';
+        }
+
+        card.innerHTML = `
+          <div class="menu-card-header">
+            <div>
+              <div class="menu-card-title">${item.name}</div>
+            </div>
+            ${arButtonHtml}
+          </div>
+          <div class="menu-card-desc">${item.desc}</div>
+          ${sizesHtml}
+        `;
+
+        menuContainer.appendChild(card);
+      });
+    }
+
+    async function openViewer(subitem, itemName) {
+      document.getElementById('viewer-name').innerText = itemName + ' (' + subitem.name + ')';
+      document.getElementById('viewer-price').innerText = '৳ ' + subitem.price;
+
+      currentModelURL = subitem.model;
+      currentModelScale = subitem.scale;
+
+      const mvEl = document.getElementById('mv');
+      const spinner = document.getElementById('mv-spinner');
+      const cacheBadge = document.getElementById('cache-badge');
+      const launchBtn = document.getElementById('launch-ar-btn');
+
+      mvEl.removeAttribute('ios-src');
+      mvEl.setAttribute('ar', '');
+      mvEl.setAttribute('ar-modes', 'quick-look');
+      mvEl.setAttribute('ar-scale', 'fixed');
+      mvEl.setAttribute('ar-placement', 'floor');
+      mvEl.setAttribute('shadow-intensity', '0');
+      mvEl.setAttribute('exposure', '0.82');
+      mvEl.setAttribute('tone-mapping', 'commerce');
+
+      queuePreload(currentModelURL, 0);
+      getNormalizedTemplate(currentModelURL, currentModelScale).catch(() => {});
+
+      const wasCached = isModelCached(currentModelURL);
+      if (wasCached) {
+        cacheBadge.classList.add('show');
+        setTimeout(() => cacheBadge.classList.remove('show'), 1500);
+      } else {
+        cacheBadge.classList.remove('show');
+      }
+
+      spinner.classList.remove('hidden');
+      mvEl.style.opacity = '0';
+
+      try {
+        const gltf = await loadGLTF(currentModelURL);
+        applyQuickLookScale(mvEl, gltf, currentModelScale);
+
+        const displaySrc = isIOS
+          ? new URL(currentModelURL, window.location.href).href
+          : getBlobUrl(currentModelURL);
+        if (currentMvSrc !== displaySrc) {
+          const onMVLoad = () => {
+            spinner.classList.add('hidden');
+            mvEl.style.opacity = '1';
+            mvEl.removeEventListener('load', onMVLoad);
+          };
+          mvEl.addEventListener('load', onMVLoad);
+          mvEl.src = displaySrc;
+          currentMvSrc = displaySrc;
+        } else {
+          spinner.classList.add('hidden');
+          mvEl.style.opacity = '1';
+        }
+      } catch (_) {
+        spinner.classList.add('hidden');
+        mvEl.style.opacity = '1';
+        const fallbackSrc = new URL(currentModelURL, window.location.href).href;
+        if (currentMvSrc !== fallbackSrc) {
+          mvEl.src = fallbackSrc;
+          currentMvSrc = fallbackSrc;
+        }
+      }
+
+      if (!isMobile) {
+        launchBtn.innerHTML = `
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          AR on mobile only
+        `;
+        launchBtn.style.opacity = '0.45';
+        launchBtn.style.cursor = 'default';
+      } else {
+        launchBtn.innerHTML = `
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          View in AR
+        `;
+        launchBtn.style.opacity = '1';
+        launchBtn.style.cursor = 'pointer';
+      }
+
+      viewerOverlay.classList.add('active');
+    }
+
+    function closeViewer() {
+      viewerOverlay.classList.remove('active');
+    }
+
+    viewerOverlay.addEventListener('click', (e) => {
+      if (e.target === viewerOverlay) closeViewer();
+    });
+
+    initUI();
+    setTimeout(bootstrapPreload, 1500);
+
+    mv.addEventListener('ar-status', (e) => {
+      if (e.detail.status === 'not-presenting') {
+        mv.setAttribute('shadow-intensity', '0');
+        mv.setAttribute('exposure', '0.82');
+        mv.setAttribute('tone-mapping', 'commerce');
+      }
+    });
+
+    /* =========================================================
+       XR VARIABLES
+    ========================================================= */
+    let renderer;
+    let scene;
+    let camera;
+
+    let xrSession;
+    let hitTestSource;
+
+    let reticle;
+    let placementRoot;
+    let modelGroup;
+
+    let latestHit = null;
+    let placed = false;
+    let userScale = 1;
+    let arSessionEnding = false;
+
+    let smoothedPosition = new THREE.Vector3();
+    let smoothedQuaternion = new THREE.Quaternion();
+    let reticleInitialized = false;
+
+    const STABLE_THRESHOLD = 2;
+    const MISS_GRACE_MAX = 18;
+    let stableFrames = 0;
+    let missGraceFrames = 0;
+    let scanFrames = 0;
+
+    const overlay = document.getElementById('overlay');
+    const hint = document.getElementById('hint');
+    const placeBtn = document.getElementById('place-btn');
+    const controls = document.getElementById('controls');
+
+    const tempMatrix = new THREE.Matrix4();
+    const tempPos = new THREE.Vector3();
+    const tempFullQ = new THREE.Quaternion();
+    const tempEuler = new THREE.Euler();
+    const tempEulerFlat = new THREE.Euler();
+    const tempFlatQ = new THREE.Quaternion();
+    const touchRight = new THREE.Vector3();
+    const touchForward = new THREE.Vector3();
+
+    const AR_DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && xrSession) xrSession.end();
+    });
+
+    function showARError(title, body, fix) {
+      document.getElementById('ar-error-title').innerHTML = title;
+      document.getElementById('ar-error-body').innerHTML = body;
+      document.getElementById('ar-error-fix').innerHTML = fix;
+      document.getElementById('ar-error-modal').classList.add('active');
+    }
+
+    function resetHitState() {
+      stableFrames = 0;
+      missGraceFrames = 0;
+      scanFrames = 0;
+      reticleInitialized = false;
+      latestHit = null;
+    }
+
+    function resetPlacementRoot() {
+      if (!placementRoot) return;
+      placementRoot.position.set(0, 0, 0);
+      placementRoot.quaternion.identity();
+      placementRoot.updateMatrixWorld(true);
+    }
+
+    function updatePlacementUI() {
+      const ready = stableFrames >= STABLE_THRESHOLD;
+      if (ready) {
+        placeBtn.classList.add('ready');
+        hint.innerHTML = 'Surface found • Tap to place';
+      } else if (reticleInitialized) {
+        placeBtn.classList.remove('ready');
+        hint.innerHTML = 'Hold steady… almost there';
+      } else if (scanFrames > 30) {
+        placeBtn.classList.remove('ready');
+        hint.innerHTML = 'Try a matte surface • tilt phone slowly';
+      } else {
+        placeBtn.classList.remove('ready');
+        hint.innerHTML = 'Point at a flat surface';
+      }
+    }
+
+    function tuneMaterialsForAR(root) {
+      root.traverse(o => {
+        if (!o.isMesh || !o.material) return;
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        mats.forEach(m => {
+          if (m.metalness !== undefined) m.metalness = Math.min(m.metalness, 0.12);
+          if (m.roughness !== undefined) m.roughness = Math.max(m.roughness, 0.72);
+          if (m.envMapIntensity !== undefined) m.envMapIntensity = 0.12;
+          if (m.emissive && m.emissive.r + m.emissive.g + m.emissive.b > 0) {
+            m.emissive.multiplyScalar(0.35);
+          }
+          if (m.emissiveIntensity !== undefined) m.emissiveIntensity *= 0.35;
+          m.needsUpdate = true;
+        });
+      });
+    }
+
+    function disposeARPipeline() {
+      if (hitTestSource) {
+        try { hitTestSource.cancel(); } catch (_) { /* ignore */ }
+        hitTestSource = null;
+      }
+
+      if (renderer) {
+        renderer.setAnimationLoop(null);
+        try { renderer.xr.setSession(null); } catch (_) { /* ignore */ }
+        renderer.dispose();
+      }
+
+      renderer = null;
+      scene = null;
+      camera = null;
+      reticle = null;
+      placementRoot = null;
+      modelGroup = null;
+
+      const canvas = document.getElementById('xr-canvas');
+      if (canvas) canvas.remove();
+    }
+
+    async function waitForARSessionEnd() {
+      if (!xrSession) return;
+      const session = xrSession;
+      await Promise.race([
+        new Promise(resolve => {
+          const done = () => {
+            session.removeEventListener('end', done);
+            resolve();
+          };
+          session.addEventListener('end', done);
+          try { session.end(); } catch (_) { resolve(); }
+        }),
+        new Promise(resolve => setTimeout(resolve, 2000))
+      ]);
+      xrSession = null;
+    }
+
+    async function activateIOSQuickLook() {
+      const mvEl = document.getElementById('mv');
+
+      mvEl.setAttribute('ar', '');
+      mvEl.setAttribute('ar-modes', 'quick-look');
+      mvEl.setAttribute('ar-scale', 'fixed');
+      mvEl.setAttribute('ar-placement', 'floor');
+      mvEl.setAttribute('shadow-intensity', '0');
+      mvEl.setAttribute('exposure', '0.82');
+      mvEl.setAttribute('tone-mapping', 'commerce');
+
+      try {
+        const gltf = await loadGLTF(currentModelURL);
+        applyQuickLookScale(mvEl, gltf, currentModelScale);
+        const directSrc = new URL(currentModelURL, window.location.href).href;
+        if (mvEl.src !== directSrc) {
+          await new Promise((resolve, reject) => {
+            const onLoad = () => {
+              mvEl.removeEventListener('load', onLoad);
+              mvEl.removeEventListener('error', onError);
+              resolve();
+            };
+            const onError = () => {
+              mvEl.removeEventListener('load', onLoad);
+              mvEl.removeEventListener('error', onError);
+              reject();
+            };
+            mvEl.addEventListener('load', onLoad);
+            mvEl.addEventListener('error', onError);
+            mvEl.src = directSrc;
+          });
+        }
+        if (mvEl.updateComplete) await mvEl.updateComplete;
+      } catch (_) {
+        const blobSrc = getBlobUrl(currentModelURL);
+        if (mvEl.src !== blobSrc) mvEl.src = blobSrc;
+      }
+
+      const tryActivate = () => {
+        if (mvEl.canActivateAR) {
+          mvEl.activateAR();
+          return true;
+        }
+        return false;
+      };
+
+      if (tryActivate()) return;
+
+      await new Promise(r => setTimeout(r, 120));
+      if (tryActivate()) return;
+
+      showARError(
+        'AR Not Available',
+        'Quick Look could not start on this device.',
+        'Use <b>Safari</b> on iOS 13+ and wait for the 3D model to finish loading.'
+      );
+    }
+
+    async function launchAR() {
+      if (!isMobile) {
+        alert('AR is available on Android and iOS mobile devices only.\nYou can view the 3D model here.');
+        return;
+      }
+
+      if (isIOS) {
+        await activateIOSQuickLook();
+        return;
+      }
+
+      if (arSessionEnding) return;
+      if (xrSession) await waitForARSessionEnd();
+      disposeARPipeline();
+
+      if (!navigator.xr) {
+        showARError(
+          'AR Not Available',
+          "Your browser doesn't support WebXR AR.",
+          'Please open this page in <b>Chrome</b> on Android.'
+        );
+        return;
+      }
+
+      const supported = await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
+      if (!supported) {
+        showARError(
+          'AR Not Supported on This Device',
+          "Your device either doesn't have <b>ARCore (Google Play Services for AR)</b> installed, or it's not on Google's supported device list.",
+          `<b>Try these fixes:</b><br>
+           1. Install / update <a href="https://play.google.com/store/apps/details?id=com.google.ar.core" target="_blank" style="color:#d92b2b;font-weight:700;">Google Play Services for AR</a> from the Play Store<br>
+           2. Open this page in <b>Chrome</b> (not Samsung Browser, Firefox, etc.)<br>
+           3. If it still fails, your device may not be on Google's <a href="https://developers.google.com/ar/devices" target="_blank" style="color:#d92b2b;font-weight:700;">ARCore supported list</a>`
+        );
+        return;
+      }
+
+      try {
+        xrSession = await navigator.xr.requestSession('immersive-ar', {
+          requiredFeatures: ['hit-test'],
+          optionalFeatures: ['dom-overlay', 'local-floor', 'light-estimation'],
+          domOverlay: { root: overlay }
+        });
+      } catch (err) {
+        disposeARPipeline();
+        showARError('AR Session Failed', 'Could not start the AR camera session.', 'Close other AR apps and try again in <b>Chrome</b>.');
+        return;
+      }
+
+      overlay.classList.add('active');
+
+      const canvas = document.createElement('canvas');
+      canvas.id = 'xr-canvas';
+      overlay.insertBefore(canvas, overlay.firstChild);
+
+      renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        alpha: true,
+        antialias: false,
+        powerPreference: 'high-performance'
+      });
+
+      renderer.xr.enabled = true;
+      renderer.setPixelRatio(AR_DPR);
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 0.72;
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+
+      // Warm indoor restaurant lighting — subdued so model blends with camera feed
+      const hemiLight = new THREE.HemisphereLight(0xfff4e8, 0x8a7a68, 0.48);
+      scene.add(hemiLight);
+
+      const keyLight = new THREE.DirectionalLight(0xffecd6, 0.28);
+      keyLight.position.set(2.5, 5, 1.5);
+      scene.add(keyLight);
+
+      const fillLight = new THREE.DirectionalLight(0xe8eef5, 0.1);
+      fillLight.position.set(-2, 3, -1);
+      scene.add(fillLight);
+
+      const reticleGroup = new THREE.Group();
+      reticleGroup.rotation.x = -Math.PI / 2;
+      reticleGroup.visible = false;
+      scene.add(reticleGroup);
+      reticle = reticleGroup;
+
+      const outerRingGeo = new THREE.RingGeometry(0.07, 0.10, 24);
+      const outerRingMat = new THREE.MeshBasicMaterial({
+        color: 0xf97316, transparent: true, opacity: 0.92, side: THREE.DoubleSide, depthTest: false
+      });
+      reticleGroup.add(new THREE.Mesh(outerRingGeo, outerRingMat));
+
+      const innerCircleGeo = new THREE.CircleGeometry(0.055, 24);
+      const innerCircleMat = new THREE.MeshBasicMaterial({
+        color: 0xffffff, transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthTest: false
+      });
+      const innerCircle = new THREE.Mesh(innerCircleGeo, innerCircleMat);
+      innerCircle.position.z = 0.001;
+      reticleGroup.add(innerCircle);
+
+      reticle.material = outerRingMat;
+
+      placementRoot = new THREE.Group();
+      scene.add(placementRoot);
+
+      modelGroup = new THREE.Group();
+      modelGroup.visible = false;
+      placementRoot.add(modelGroup);
+
+      renderer.setPixelRatio(AR_DPR);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      resetPlacementRoot();
+      modelGroup.visible = false;
+      reticle.visible = false;
+      placed = false;
+      userScale = 1.0;
+      resetHitState();
+      placeBtn.classList.remove('ready');
+      controls.classList.remove('visible');
+      hint.innerHTML = 'Point at a flat surface';
+
+      mv.style.display = 'none';
+      await loadModel();
+
+      const viewerSpace = await xrSession.requestReferenceSpace('viewer');
+
+      try {
+        hitTestSource = await xrSession.requestHitTestSource({
+          space: viewerSpace,
+          entityTypes: ['plane', 'point', 'mesh']
+        });
+      } catch (_) {
+        try {
+          hitTestSource = await xrSession.requestHitTestSource({
+            space: viewerSpace,
+            entityTypes: ['plane', 'point']
+          });
+        } catch (_2) {
+          hitTestSource = await xrSession.requestHitTestSource({ space: viewerSpace });
+        }
+      }
+
+      let worldRefSpace;
+      try {
+        worldRefSpace = await xrSession.requestReferenceSpace('local-floor');
+      } catch (_) {
+        worldRefSpace = await xrSession.requestReferenceSpace('local');
+      }
+      xrSession._worldRefSpace = worldRefSpace;
+
+      placeBtn.onclick = placeModel;
+      renderer.xr.setSession(xrSession);
+      renderer.setAnimationLoop(renderXR);
+
+      xrSession.addEventListener('end', onSessionEnd);
+      xrSession.addEventListener('select', () => {
+        if (!placed && stableFrames >= STABLE_THRESHOLD && reticle && reticle.visible) {
+          placeModel();
+        }
+      });
+
+      overlay.addEventListener('touchstart', onTouchStart, { passive: false });
+      overlay.addEventListener('touchmove', onTouchMove, { passive: false });
+      overlay.addEventListener('touchend', onTouchEnd);
+    }
+
+    function clearModelGroup() {
+      while (modelGroup.children.length > 0) {
+        const child = modelGroup.children[0];
+        modelGroup.remove(child);
+        child.traverse(o => {
+          if (o.geometry && !o.geometry.userData.shared) o.geometry.dispose();
+          if (o.material) {
+            if (Array.isArray(o.material)) o.material.forEach(m => { if (!m.userData.shared) m.dispose(); });
+            else if (!o.material.userData.shared) o.material.dispose();
+          }
+        });
+      }
+    }
+
+    async function loadModel() {
+      clearModelGroup();
+
+      const template = await getNormalizedTemplate(currentModelURL, currentModelScale);
+      const model = template.clone(true);
+      tuneMaterialsForAR(model);
+      modelGroup.add(model);
+      modelGroup.scale.setScalar(userScale);
+    }
+
+    const hitNormal = new THREE.Vector3();
+
+    function scoreHit(hit, refSpace) {
+      const pose = hit.getPose(refSpace);
+      if (!pose) return -Infinity;
+
+      tempMatrix.fromArray(pose.transform.matrix);
+      tempPos.setFromMatrixPosition(tempMatrix);
+
+      hitNormal.set(tempMatrix.elements[4], tempMatrix.elements[5], tempMatrix.elements[6]).normalize();
+      const upAlignment = Math.abs(hitNormal.y);
+      const dist = tempPos.length();
+
+      return upAlignment * 3.5 + (1 / (dist + 0.15)) + (upAlignment > 0.75 ? 1.5 : 0);
+    }
+
+    function pickBestHit(hits, refSpace) {
+      if (!hits.length) return null;
+      let best = hits[0];
+      let bestScore = scoreHit(best, refSpace);
+
+      for (let i = 1; i < hits.length; i++) {
+        const score = scoreHit(hits[i], refSpace);
+        if (score > bestScore) {
+          bestScore = score;
+          best = hits[i];
+        }
+      }
+      return best;
+    }
+
+    function applyHitPose(pose) {
+      tempMatrix.fromArray(pose.transform.matrix);
+      tempPos.setFromMatrixPosition(tempMatrix);
+
+      const q = pose.transform.orientation;
+      tempFullQ.set(q.x, q.y, q.z, q.w);
+      tempEuler.setFromQuaternion(tempFullQ, 'YXZ');
+      tempEulerFlat.set(0, tempEuler.y, 0, 'YXZ');
+      tempFlatQ.setFromEuler(tempEulerFlat);
+
+      const lerpAlpha = !reticleInitialized ? 1 : (stableFrames < 3 ? 0.72 : 0.38);
+
+      if (!reticleInitialized) {
+        smoothedPosition.copy(tempPos);
+        smoothedQuaternion.copy(tempFlatQ);
+        reticleInitialized = true;
+      } else {
+        smoothedPosition.lerp(tempPos, lerpAlpha);
+        smoothedQuaternion.slerp(tempFlatQ, lerpAlpha);
+      }
+
+      reticle.position.copy(smoothedPosition);
+      reticle.quaternion.copy(smoothedQuaternion);
+      reticle.visible = true;
+    }
+
+    function renderXR(time, frame) {
+      if (!frame) return;
+
+      const refSpace = xrSession && xrSession._worldRefSpace
+        ? xrSession._worldRefSpace
+        : renderer.xr.getReferenceSpace();
+
+      if (!placed && refSpace && hitTestSource) {
+        scanFrames++;
+        const hits = frame.getHitTestResults(hitTestSource);
+
+        if (hits.length > 0) {
+          missGraceFrames = 0;
+          stableFrames = Math.min(stableFrames + 1, 60);
+          latestHit = pickBestHit(hits, refSpace);
+
+          const pose = latestHit.getPose(refSpace);
+          if (pose) {
+            applyHitPose(pose);
+            reticle.material.opacity = 0.65 + Math.sin(time * 0.006) * 0.15;
+          }
+
+          updatePlacementUI();
+        } else if (missGraceFrames < MISS_GRACE_MAX && reticleInitialized) {
+          missGraceFrames++;
+          updatePlacementUI();
+        } else {
+          stableFrames = Math.max(0, stableFrames - 1);
+          if (stableFrames === 0) {
+            reticle.visible = false;
+            latestHit = null;
+            reticleInitialized = false;
+          }
+          updatePlacementUI();
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    function placeModel() {
+      if (!reticle || !reticle.visible) return;
+      if (placed || stableFrames < STABLE_THRESHOLD) return;
+
+      placementRoot.position.copy(smoothedPosition);
+      placementRoot.quaternion.copy(smoothedQuaternion);
+
+      modelGroup.visible = true;
+      placed = true;
+
+      controls.classList.add('visible');
+      placeBtn.classList.remove('ready');
+      hint.innerHTML = 'Dish placed 🎉 Drag to move • Pinch to resize';
+      reticle.visible = false;
+
+      if (hitTestSource) {
+        hitTestSource.cancel();
+        hitTestSource = null;
+      }
+      latestHit = null;
+    }
+
+    function scaleModel(mult) {
+      userScale *= mult;
+      userScale = Math.max(0.3, Math.min(userScale, 3));
+      modelGroup.scale.setScalar(userScale);
+    }
+
+    function stopAR() {
+      if (xrSession) {
+        arSessionEnding = true;
+        xrSession.end();
+      }
+    }
+
+    function onSessionEnd() {
+      mv.style.display = 'block';
+      overlay.classList.remove('active');
+
+      overlay.removeEventListener('touchstart', onTouchStart);
+      overlay.removeEventListener('touchmove', onTouchMove);
+      overlay.removeEventListener('touchend', onTouchEnd);
+
+      placed = false;
+      resetHitState();
+      controls.classList.remove('visible');
+      placeBtn.classList.remove('ready');
+      hint.innerHTML = 'Point at a flat surface';
+
+      xrSession = null;
+      disposeARPipeline();
+      arSessionEnding = false;
+    }
+
+    /* =========================================================
+       TOUCH INTERACTIONS (zero per-frame allocations)
+    ========================================================= */
+    let isDragging = false;
+    let initialPinchDist = 0;
+    let initialUserScale = 1;
+    let lastTouchX = 0;
+    let lastTouchY = 0;
+
+    function getPinchDist(e) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function onTouchStart(e) {
+      if (!placed) return;
+
+      if (e.touches.length === 1) {
+        isDragging = true;
+        lastTouchX = e.touches[0].clientX;
+        lastTouchY = e.touches[0].clientY;
+      } else if (e.touches.length === 2) {
+        isDragging = false;
+        initialPinchDist = getPinchDist(e);
+        initialUserScale = userScale;
+      }
+    }
+
+    function onTouchMove(e) {
+      e.preventDefault();
+      if (!placed) return;
+
+      if (e.touches.length === 1 && isDragging) {
+        const dx = e.touches[0].clientX - lastTouchX;
+        const dy = e.touches[0].clientY - lastTouchY;
+        lastTouchX = e.touches[0].clientX;
+        lastTouchY = e.touches[0].clientY;
+
+        const xrCamera = renderer.xr.getCamera(camera);
+        const activeCamera = xrCamera.cameras.length > 0 ? xrCamera.cameras[0] : xrCamera;
+        const moveSpeed = 0.001;
+
+        touchRight.set(1, 0, 0).applyQuaternion(activeCamera.quaternion);
+        touchRight.y = 0;
+        touchRight.normalize();
+
+        touchForward.set(0, 0, -1).applyQuaternion(activeCamera.quaternion);
+        touchForward.y = 0;
+        touchForward.normalize();
+
+        placementRoot.position.addScaledVector(touchRight, -dx * moveSpeed);
+        placementRoot.position.addScaledVector(touchForward, dy * moveSpeed);
+      } else if (e.touches.length === 2) {
+        const dist = getPinchDist(e);
+        const scaleMult = dist / initialPinchDist;
+        userScale = initialUserScale * scaleMult;
+        userScale = Math.max(0.3, Math.min(userScale, 3));
+        modelGroup.scale.setScalar(userScale);
+      }
+    }
+
+    function onTouchEnd(e) {
+      if (e.touches.length < 2) initialPinchDist = 0;
+      if (e.touches.length === 0) isDragging = false;
+    }
+  </script>
+</body>
+</html>
